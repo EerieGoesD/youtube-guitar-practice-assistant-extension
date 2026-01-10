@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guitar Practice Assistant</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="top">
+        <div class="titleBlock">
+          <div class="title">Guitar Practice Assistant</div>
+          <div class="topLinks">
+            <a href="https://eeriegoesd.com/" target="_blank" rel="noopener noreferrer">Made by EERIE</a>
+            <a href="https://buymeacoffee.com/eeriegoesd" target="_blank" rel="noopener noreferrer">Buy Me a Coffee</a>
+          </div>
+        </div>
+
+        <label class="chk">
+          <input type="checkbox" id="popout" aria-label="Pop-out widget" />
+          <span>Pop-out</span>
+        </label>
+      </div>
+
+      <div class="row">
+        <div class="label">
+          <span>Player</span>
+          <span id="playerLabel">--</span>
+        </div>
+        <div class="ctrl">
+          <button class="icon" id="restart" title="Restart">⏮</button>
+          <button class="icon" id="playPause" title="Play/Pause">▶</button>
+          <button class="icon" id="ff10" title="Forward 10s">+10</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="label">
+          <span>Speed</span>
+          <span id="speedLabel">100%</span>
+        </div>
+        <div class="ctrl">
+          <input
+            id="speed"
+            type="range"
+            min="0"
+            max="200"
+            step="1"
+            aria-label="Speed"
+            title="Speed"
+          />
+          <input
+            id="speedN"
+            type="number"
+            min="0"
+            max="200"
+            step="1"
+            aria-label="Speed percent"
+            title="Speed percent"
+          />
+          <button id="speedReset">Reset</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="label">
+          <span>Transpose</span>
+          <span id="transposeLabel">0</span>
+        </div>
+        <div class="ctrl">
+          <input
+            id="transpose"
+            type="range"
+            min="-12"
+            max="12"
+            step="1"
+            aria-label="Transpose"
+            title="Transpose"
+          />
+          <input
+            id="transposeN"
+            type="number"
+            min="-12"
+            max="12"
+            step="1"
+            aria-label="Transpose semitones"
+            title="Transpose semitones"
+          />
+          <button id="transposeReset">Reset</button>
+        </div>
+        <div class="mini">Shift pitch by semitones (-12 to +12)</div>
+      </div>
+
+      <div class="row">
+        <div class="label">
+          <span>Loop A↔B</span>
+          <span id="loopLabel">Off</span>
+        </div>
+        <div class="ctrl">
+          <button id="setA">Set A</button>
+          <button id="setB">Set B</button>
+          <button id="toggleLoop">Loop</button>
+        </div>
+        <div class="ctrl">
+          <button id="goA">Go A</button>
+          <button id="goB">Go B</button>
+          <button id="clearLoop">Clear</button>
+        </div>
+        <div class="mini" id="abTimes">A=--:--.--  B=--:--.--</div>
+      </div>
+
+      <div class="row">
+        <div class="label">
+          <span>Speed ramp</span>
+          <label class="chk">
+            <input type="checkbox" id="rampOn" aria-label="Speed ramp on/off" />
+            <span>On</span>
+          </label>
+        </div>
+
+        <div class="rampGrid">
+          <label class="mini">
+            Every (loops)
+            <input
+              id="rampEvery"
+              type="number"
+              min="1"
+              max="100"
+              step="1"
+              aria-label="Ramp every loops"
+              title="Ramp every loops"
+            />
+          </label>
+          <label class="mini">
+            Step (%)
+            <input
+              id="rampStep"
+              type="number"
+              min="1"
+              max="50"
+              step="1"
+              aria-label="Ramp step percent"
+              title="Ramp step percent"
+            />
+          </label>
+          <label class="mini">
+            Max (%)
+            <input
+              id="rampMax"
+              type="number"
+              min="0"
+              max="200"
+              step="1"
+              aria-label="Ramp max percent"
+              title="Ramp max percent"
+            />
+          </label>
+        </div>
+
+        <div class="mini help">
+          Increases speed by <b>Step</b> every <b>Every</b> loop hits at B, capped at <b>Max</b>.
+        </div>
+        <div class="ctrl">
+          <button id="rampReset">Reset ramp</button>
+        </div>
+      </div>
+
+      <div class="status" id="status">No video detected.</div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

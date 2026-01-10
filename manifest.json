@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Guitar Practice Assistant by EERIE",
+  "version": "1.3.1",
+  "description": "Speed, A-B loop, speed ramp, pitch transpose, and basic player controls for practicing with YouTube videos.",
+  "permissions": ["storage", "activeTab"],
+  "background": { "service_worker": "background.js" },
+  "action": {
+    "default_title": "Guitar Practice Assistant",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*", "https://m.youtube.com/*", "https://music.youtube.com/*"],
+      "js": ["content.js"],
+      "css": ["widget.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "set-loop-a": {
+      "suggested_key": { "default": "Alt+Shift+A" },
+      "description": "Set Loop Point A"
+    },
+    "set-loop-b": {
+      "suggested_key": { "default": "Alt+Shift+B" },
+      "description": "Set Loop Point B"
+    },
+    "toggle-loop": {
+      "suggested_key": { "default": "Alt+Shift+L" },
+      "description": "Toggle Loop On/Off"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["gpa-pitch-worklet.js"],
+      "matches": ["https://www.youtube.com/*", "https://m.youtube.com/*", "https://music.youtube.com/*"]
+    }
+  ]
+}
