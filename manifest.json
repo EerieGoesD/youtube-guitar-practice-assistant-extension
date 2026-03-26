@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "YouTube Guitar Practice Assistant by EERIE",
   "version": "1.4.0",
-  "description": "Speed, A-B loop, speed ramp, pitch transpose, volume boost, saved loops, and basic player controls for practicing with YouTube videos.",
+  "description": "Speed, A-B loop, speed ramp, pitch transpose, volume boost, saved loops, and player controls for YouTube.",
   "permissions": ["storage", "activeTab"],
   "background": { "service_worker": "background.js" },
   "action": {
