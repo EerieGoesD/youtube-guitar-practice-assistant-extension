@@ -4,15 +4,15 @@ Chrome extension that adds practice-focused controls to YouTube videos.
 
 ## Features
 
-- **Speed control (0-400%)** — pitch preserved
-- **Pitch transpose (-12 to +12 semitones)** — independent of speed
-- **Volume boost (100-200%)** — amplify beyond YouTube's max
-- **A-B looping** — set points, toggle, jump to A/B
-- **Saved loops** — name, save, and reload loop points
-- **Speed ramp** — auto-increase speed every N loops up to a cap
-- **Player controls** — restart, play/pause, +10s
-- **Pop-out widget** — floating controller on the page
-- **Debug panel** — built-in logging for troubleshooting
+- **Speed control (0-400%)** - pitch preserved
+- **Pitch transpose (-12 to +12 semitones)** - independent of speed
+- **Volume boost (100-200%)** - amplify beyond YouTube's max
+- **A-B looping** - set points, toggle, jump to A/B
+- **Saved loops** - name, save, and reload loop points
+- **Speed ramp** - auto-increase speed every N loops up to a cap
+- **Player controls** - restart, play/pause, +10s
+- **Pop-out widget** - floating controller on the page
+- **Debug panel** - built-in logging for troubleshooting
 
 ## Keyboard shortcuts
 
