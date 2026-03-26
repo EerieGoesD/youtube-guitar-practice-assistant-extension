@@ -4,6 +4,14 @@
 
   const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
 
+  // Debug log buffer — popup can retrieve via GPA_GET_DEBUG
+  const _debugLog = [];
+  function _dbg(msg) {
+    const entry = `[${new Date().toLocaleTimeString()}] ${msg}`;
+    _debugLog.push(entry);
+    if (_debugLog.length > 200) _debugLog.shift();
+  }
+
   const fmtTime = (t) => {
     if (t == null || !isFinite(t)) return "--:--.--";
     const m = Math.floor(t / 60);
@@ -15,6 +23,7 @@
   const state = {
     speedPct: 100,
     transposeSemitones: 0,
+    volumeBoost: 100,
     loopEnabled: false,
     loopA: null,
     loopB: null,
@@ -42,6 +51,7 @@
   let gainNode = null;
   let pitchNode = null;
   let audioConnected = false;
+  let audioInitializing = false;
   let workletLoaded = false;
 
   const mediaSourceByVideo = new WeakMap();
@@ -108,7 +118,12 @@
   }
 
   async function initAudioProcessing() {
-    if (audioConnected || !videoEl) return;
+    if (audioConnected || audioInitializing || !videoEl) {
+      _dbg(`initAudio skip: connected=${audioConnected}, initializing=${audioInitializing}, video=${!!videoEl}`);
+      return;
+    }
+    audioInitializing = true;
+    _dbg(`initAudio starting...`);
 
     try {
       if (!audioContext) {
@@ -136,12 +151,38 @@
       pitchNode.connect(audioContext.destination);
 
       audioConnected = true;
+      _dbg(`initAudio SUCCESS`);
 
-      applyTranspose(); // set initial semitones
-    } catch (_) {
-      // If audio graph can't be created on this page/video, transpose will be a no-op.
+      applyTranspose();
+    } catch (e) {
+      _dbg(`initAudio FAILED: ${e.message}`);
       cleanupAudio();
+    } finally {
+      audioInitializing = false;
     }
+  }
+
+  function applyVolume() {
+    const boost = clamp(state.volumeBoost, 100, 200);
+    if (audioConnected && gainNode) {
+      gainNode.gain.value = boost / 100;
+      _dbg(`applyVolume: gain=${boost / 100}`);
+    } else {
+      _dbg(`applyVolume: no gain node (connected=${audioConnected})`);
+    }
+  }
+
+  async function setVolume(pct) {
+    const v = parseInt(pct, 10);
+    state.volumeBoost = clamp(isNaN(v) ? 100 : v, 100, 200);
+    _dbg(`setVolume(${pct}) -> ${state.volumeBoost}%`);
+    if (!audioConnected) {
+      _dbg(`  init audio for volume boost`);
+      await initAudioProcessing();
+    }
+    applyVolume();
+    await saveState();
+    syncWidgetUI();
   }
 
   function applyTranspose() {
@@ -201,7 +242,7 @@
   function applyPlaybackRate() {
     if (!videoEl) return;
 
-    const speed = clamp(state.speedPct, 0, 200) / 100;
+    const speed = clamp(state.speedPct, 0, 400) / 100;
 
     // Keep speed changes from affecting pitch (browser time-stretch).
     videoEl.preservesPitch = true;
@@ -217,13 +258,13 @@
   function resetRampIfNeeded(onManualSpeedChange) {
     if (!state.rampEnabled) return;
     if (onManualSpeedChange) {
-      state.rampBasePct = clamp(state.speedPct, 0, 200);
+      state.rampBasePct = clamp(state.speedPct, 0, 400);
       state.rampLoopCount = 0;
     }
   }
 
   async function setSpeedPct(pct, { isRampChange = false } = {}) {
-    state.speedPct = clamp(parseInt(pct, 10) || 0, 0, 200);
+    state.speedPct = clamp(parseInt(pct, 10) || 0, 0, 400);
     if (!isRampChange) resetRampIfNeeded(true);
     applyPlaybackRate();
     await saveState();
@@ -244,7 +285,7 @@
     }
 
     const step = Math.max(1, parseInt(state.rampStepPct, 10) || 1);
-    const maxPct = clamp(parseInt(state.rampMaxPct, 10) || 200, 0, 200);
+    const maxPct = clamp(parseInt(state.rampMaxPct, 10) || 200, 0, 400);
 
     const next = clamp(state.speedPct + step, 0, maxPct);
     if (next !== state.speedPct) await setSpeedPct(next, { isRampChange: true });
@@ -257,7 +298,7 @@
   async function setRampEnabled(on) {
     state.rampEnabled = !!on;
     if (state.rampEnabled) {
-      state.rampBasePct = clamp(state.speedPct, 0, 200);
+      state.rampBasePct = clamp(state.speedPct, 0, 400);
       state.rampLoopCount = 0;
     }
     await saveState();
@@ -267,14 +308,14 @@
   async function setRampParams({ every, step, max }) {
     if (every != null) state.rampEveryLoops = clamp(parseInt(every, 10) || 1, 1, 100);
     if (step != null) state.rampStepPct = clamp(parseInt(step, 10) || 1, 1, 50);
-    if (max != null) state.rampMaxPct = clamp(parseInt(max, 10) || 200, 0, 200);
+    if (max != null) state.rampMaxPct = clamp(parseInt(max, 10) || 200, 0, 400);
     await saveState();
     syncWidgetUI();
   }
 
   async function resetRamp() {
     state.rampLoopCount = 0;
-    const base = clamp(parseInt(state.rampBasePct, 10) || 100, 0, 200);
+    const base = clamp(parseInt(state.rampBasePct, 10) || 100, 0, 400);
     await setSpeedPct(base);
   }
 
@@ -289,13 +330,14 @@
 
   async function attachToVideo(v) {
     if (!v || v === videoEl) return;
+    _dbg(`attachToVideo: src=${v.src?.substring(0,60) || "blob"}, transpose=${state.transposeSemitones}, vol=${state.volumeBoost}`);
 
     detachFromVideo();
     videoEl = v;
 
     applyPlaybackRate();
 
-    // If transpose is active, route audio through the worklet (speed stays independent)
+    // Init audio if transpose is active (volume uses YouTube's API for 0-100%)
     if (state.transposeSemitones !== 0) {
       await initAudioProcessing();
     }
@@ -440,7 +482,7 @@
 
         <div class="row">
           <div class="label"><span>Speed</span><span id="gpa-w-speed">100%</span></div>
-          <input id="gpa-w-speedR" type="range" min="0" max="200" step="1" />
+          <input id="gpa-w-speedR" type="range" min="0" max="400" step="1" />
         </div>
 
         <div class="row">
@@ -469,7 +511,7 @@
           <div class="grid3">
             <input id="gpa-w-every" type="number" min="1" max="100" step="1" title="Every (loops)" />
             <input id="gpa-w-step" type="number" min="1" max="50" step="1" title="Step (%)" />
-            <input id="gpa-w-max" type="number" min="0" max="200" step="1" title="Max (%)" />
+            <input id="gpa-w-max" type="number" min="0" max="400" step="1" title="Max (%)" />
           </div>
           <div class="btns" style="margin-top:6px;">
             <button id="gpa-w-rampToggle">Ramp</button>
@@ -619,12 +661,18 @@
     (async () => {
       if (!msg?.type) return;
 
+      if (msg.type === "GPA_GET_DEBUG") {
+        sendResponse({ logs: _debugLog.slice() });
+        return true;
+      }
+
       if (msg.type === "GPA_GET_STATE") {
         ensureVideoAttached();
         sendResponse({
           hasVideo: !!videoEl,
           speedPct: state.speedPct,
           transposeSemitones: state.transposeSemitones,
+          volumeBoost: state.volumeBoost,
           loopEnabled: state.loopEnabled,
           loopA: state.loopA,
           loopB: state.loopB,
@@ -646,6 +694,10 @@
 
         if (p.speedPct != null) await setSpeedPct(p.speedPct);
         if (p.transposeSemitones != null) await setTranspose(p.transposeSemitones);
+        if (p.volumeBoost != null) {
+          _dbg(`GPA_SET volumeBoost=${p.volumeBoost}`);
+          await setVolume(p.volumeBoost);
+        }
 
         if (p.rampEnabled != null) await setRampEnabled(p.rampEnabled);
         if (p.rampEveryLoops != null || p.rampStepPct != null || p.rampMaxPct != null) {
@@ -681,6 +733,20 @@
         if (a === "goB") goToPoint("B");
         if (a === "resetRamp") await resetRamp();
 
+        _dbg(`GPA_ACTION: ${a} (videoEl=${!!videoEl})`);
+        if (a === "loadLoop" && msg.loopA != null && msg.loopB != null) {
+          state.loopA = msg.loopA;
+          state.loopB = msg.loopB;
+          state.loopEnabled = true;
+          state.rampLoopCount = 0;
+          if (videoEl) {
+            suppressLoopUntil = performance.now() + 800;
+            try { videoEl.currentTime = Math.min(msg.loopA, msg.loopB); } catch (_) {}
+          }
+          await saveState();
+          syncWidgetUI();
+        }
+
         if (a === "playPause") await playPause();
         if (a === "ff10") seekForward10();
         if (a === "restart") restart();
@@ -711,11 +777,11 @@
       if (v) {
         if (v !== videoEl) attachToVideo(v);
 
-        const speed = clamp(state.speedPct, 0, 200) / 100;
+        const speed = clamp(state.speedPct, 0, 400) / 100;
         if (videoEl && Math.abs(videoEl.playbackRate - speed) > 0.001) applyPlaybackRate();
 
-        // keep pitch param in sync (in case node exists)
         applyTranspose();
+        applyVolume();
       } else {
         detachFromVideo();
       }
@@ -736,12 +802,6 @@
     ensureWidget();
     ensureVideoAttached();
     applyPlaybackRate();
-
-    // If transpose was saved non-zero, try to init audio processing.
-    // If the page blocks AudioContext until a gesture, it will succeed after the first user interaction.
-    if (state.transposeSemitones !== 0) {
-      await initAudioProcessing();
-    }
 
     startWatcher();
     startWidgetTimer();

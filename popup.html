@@ -14,6 +14,8 @@
           <div class="topLinks">
             <a href="https://eeriegoesd.com/" target="_blank" rel="noopener noreferrer">Made by EERIE</a>
             <a href="https://buymeacoffee.com/eeriegoesd" target="_blank" rel="noopener noreferrer">Buy Me a Coffee</a>
+            <a href="https://github.com/EerieGoesD/youtube-guitar-practice-assistant-extension/issues" target="_blank" rel="noopener noreferrer">Report Issue</a>
+            <a href="https://github.com/EerieGoesD/youtube-guitar-practice-assistant-extension/discussions" target="_blank" rel="noopener noreferrer">Feedback</a>
           </div>
         </div>
 
@@ -45,7 +47,7 @@
             id="speed"
             type="range"
             min="0"
-            max="200"
+            max="400"
             step="1"
             aria-label="Speed"
             title="Speed"
@@ -54,7 +56,7 @@
             id="speedN"
             type="number"
             min="0"
-            max="200"
+            max="400"
             step="1"
             aria-label="Speed percent"
             title="Speed percent"
@@ -94,6 +96,19 @@
 
       <div class="row">
         <div class="label">
+          <span>Volume Boost</span>
+          <span id="volumeLabel">100%</span>
+        </div>
+        <div class="ctrl">
+          <input id="volume" type="range" min="100" max="200" step="1" aria-label="Volume boost" title="Volume boost" />
+          <input id="volumeN" type="number" min="100" max="200" step="1" aria-label="Volume boost percent" title="Volume boost percent" />
+          <button id="volumeReset">Reset</button>
+        </div>
+        <div class="mini">Boost volume above normal (100% = 0dB)</div>
+      </div>
+
+      <div class="row">
+        <div class="label">
           <span>Loop A↔B</span>
           <span id="loopLabel">Off</span>
         </div>
@@ -108,6 +123,16 @@
           <button id="clearLoop">Clear</button>
         </div>
         <div class="mini" id="abTimes">A=--:--.--  B=--:--.--</div>
+      </div>
+
+      <div class="row">
+        <div class="label">
+          <span>Saved Loops</span>
+          <button id="saveLoop" style="padding:4px 8px;font-size:11px;">Save Current</button>
+        </div>
+        <div id="savedLoopsList">
+          <div class="mini" style="opacity:0.5">No saved loops yet</div>
+        </div>
       </div>
 
       <div class="row">
@@ -150,7 +175,7 @@
               id="rampMax"
               type="number"
               min="0"
-              max="200"
+              max="400"
               step="1"
               aria-label="Ramp max percent"
               title="Ramp max percent"
@@ -167,6 +192,20 @@
       </div>
 
       <div class="status" id="status">No video detected.</div>
+
+      <div class="row">
+        <label class="chk">
+          <input type="checkbox" id="debugToggle" />
+          <span>Debug</span>
+        </label>
+        <div id="debugPanel" style="display:none;margin-top:6px;">
+          <div style="display:flex;gap:4px;margin-bottom:4px;">
+            <button id="debugCopy" style="padding:3px 6px;font-size:10px;">Copy</button>
+            <button id="debugClear" style="padding:3px 6px;font-size:10px;">Clear</button>
+          </div>
+          <div id="debugLog" style="max-height:200px;overflow-y:auto;font-family:Consolas,monospace;font-size:10px;color:rgba(255,255,255,0.6);line-height:1.5;white-space:pre-wrap;word-break:break-all;background:rgba(255,255,255,0.03);border-radius:6px;padding:6px;"></div>
+        </div>
+      </div>
     </div>
 
     <script src="popup.js"></script>
